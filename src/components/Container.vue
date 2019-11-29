@@ -8,23 +8,11 @@
               <v-subheader v-if="item.heading">{{ item.heading }}</v-subheader>
             </v-col>
           </v-row>
-          <v-list-group
-            v-if="item.children"
-            :key="item.text"
-            v-model="item.model"
-            :prepend-icon="item.model ? item.icon : item['icon-alt']"
-            append-icon
-            no-action
-          >
+          <v-list-group v-if="item.children" :key="item.text" v-model="item.model" :prepend-icon="item.model ? item.icon : item['icon-alt']" append-icon no-action>
             <template v-slot:activator>
               <v-list-item-title>{{ item.text }}</v-list-item-title>
             </template>
-            <v-list-item
-              v-for="(child, i) in item.children"
-              :key="i"
-              link
-              :to="child.toRoute"
-            >
+            <v-list-item v-for="(child, i) in item.children" :key="i" link :to="child.toRoute">
               <v-list-item-icon v-if="child.icon">
                 <v-icon>{{ child.icon }}</v-icon>
               </v-list-item-icon>
@@ -34,7 +22,7 @@
             </v-list-item>
           </v-list-group>
           <v-list-item v-else :key="item.text" :to="item.toRoute">
-            <v-list-item-icon>
+            <v-list-item-icon v-if="item.icon">
               <v-icon>{{ item.icon }}</v-icon>
             </v-list-item-icon>
             <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -46,9 +34,7 @@
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>INTL' Taxi System</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn small color="error" ripple @click.native="logoutAction"
-        ><v-icon>exit_to_app</v-icon>logout</v-btn
-      >
+      <v-btn small color="error" ripple @click.native="logoutAction"><v-icon>exit_to_app</v-icon>logout</v-btn>
     </v-app-bar>
     <v-content>
       <v-container fluid class="fill-height">
@@ -62,7 +48,6 @@
 </template>
 
 <script>
-import common from '../plugins/common';
 
 export default {
   data() {
@@ -91,6 +76,8 @@ export default {
         localStorage.token = token;
         this.$http.defaults.headers['Authorization'] = token;
         this.items = response.data.jsonData;
+        sessionStorage.role = response.data.model.role;
+
         // let initUrl = response.data.returnDto.initUrl;
         // if (!initUrl) {
         //   initUrl = '/dashboard';

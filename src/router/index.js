@@ -4,6 +4,7 @@ import Container from '../components/Container.vue';
 import SignIn from '../views/SignIn.vue';
 import Dashboard from '../views/Dashboard.vue';
 import CodeList from '../views/CodeList.vue';
+import UserList from '../views/UserList.vue';
 
 Vue.use(VueRouter);
 
@@ -22,6 +23,21 @@ const routes = [
         path: '/code',
         name: '코드관리',
         component: CodeList,
+      },
+      {
+        path: '/user',
+        name: '사용자 관리',
+        component: UserList,
+      },
+      {
+        path: '/student',
+        name: '수강생 관리',
+        component: UserList,
+      },
+      {
+        path: '/teacher',
+        name: '강사 관리',
+        component: UserList,
       },
     ],
   },

@@ -6,38 +6,16 @@
           <v-row>
             <v-col cols="12" md="6">
               <span>오늘의 배차 현황</span>
-              <v-switch
-                v-model="$vuetify.theme.dark"
-                primary
-                label="Dark"
-              />
+              <v-switch v-model="$vuetify.theme.dark" primary label="Dark" />
             </v-col>
             <v-col cols="12" md="6">
               <span>오늘의 입차 현황</span>
               <v-radio-group v-model="primaryDrawer.type" column>
-                <v-radio
-                  v-for="drawer in drawers"
-                  :key="drawer"
-                  :label="drawer"
-                  :value="drawer.toLowerCase()"
-                  primary
-                />
+                <v-radio v-for="drawer in drawers" :key="drawer" :label="drawer" :value="drawer.toLowerCase()" primary />
               </v-radio-group>
-              <v-switch
-                v-model="primaryDrawer.clipped"
-                label="Clipped"
-                primary
-              />
-              <v-switch
-                v-model="primaryDrawer.floating"
-                label="Floating"
-                primary
-              />
-              <v-switch
-                v-model="primaryDrawer.mini"
-                label="Mini"
-                primary
-              />
+              <v-switch v-model="primaryDrawer.clipped" label="Clipped" primary />
+              <v-switch v-model="primaryDrawer.floating" label="Floating" primary />
+              <v-switch v-model="primaryDrawer.mini" label="Mini" primary />
             </v-col>
             <v-col cols="12" md="6">
               <span>완료 내역</span>

@@ -10,22 +10,8 @@
               </v-toolbar>
               <v-card-text>
                 <v-form ref="signInForm" lazy-validation>
-                  <v-text-field
-                    label="로그인 이메일"
-                    v-model="email"
-                    name="login"
-                    prepend-icon="person"
-                    type="text"
-                    @keyup.enter="nextField"
-                  />
-                  <v-text-field
-                    label="비밀번호"
-                    v-model="password"
-                    name="password"
-                    prepend-icon="lock"
-                    type="password"
-                    @keyup.enter="loginAction"
-                  />
+                  <v-text-field label="로그인 이메일" v-model="email" name="login" prepend-icon="person" type="text" @keyup.enter="nextField" />
+                  <v-text-field label="비밀번호" v-model="password" name="password" prepend-icon="lock" type="password" @keyup.enter="loginAction" />
                 </v-form>
               </v-card-text>
               <v-card-actions>

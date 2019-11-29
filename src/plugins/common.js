@@ -43,7 +43,7 @@ async function selAllDetailCodeList() {
   detailCodeName = {};
   detailCodeObject = {};
   for (let code of detailCodeList) {
-    detailCodeName[code.dtlCd] = code.dtlCdNm;
+    detailCodeName[code.dtlCd] = code.dtlCdName;
     detailCodeObject[code.dtlCd] = code;
   }
   return detailCodeName;
@@ -92,7 +92,7 @@ async function getGroupCodeObjects(keyList) {
       academyId: constAcademyId,
       grpCdList,
     });
-    const groupCodeList = response.data;
+    const groupCodeList = response.data.model || [];
     for (const groupCode of groupCodeList) {
       groupCodeObject[groupCode.grpCd] = groupCode;
       returnGrpObject[groupCode.grpCd] = groupCode;
@@ -105,7 +105,7 @@ async function getAllGroupCodeObjects() {
   const response = await api.post('/code/selGroupCodeInDetailCodeList', {
     academyId: constAcademyId,
   });
-  const groupCodeList = response.data;
+  const groupCodeList = response.data.model;
   for (const groupCode of groupCodeList) {
     groupCodeObject[groupCode.grpCd] = groupCode;
   }
@@ -147,7 +147,7 @@ async function selAllGroupCodeList() {
   const response = await this.$http.post('/code/selGroupCodeList');
   const groupCodeList = response.data;
   for (let code of groupCodeList) {
-    groupCodeName[code.grpCd] = code.grpCdNm;
+    groupCodeName[code.grpCd] = code.grpCdName;
     groupCodeObject[code.grpCd] = code;
   }
 }

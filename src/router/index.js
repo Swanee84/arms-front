@@ -5,6 +5,7 @@ import SignIn from '../views/SignIn.vue';
 import Dashboard from '../views/Dashboard.vue';
 import CodeList from '../views/CodeList.vue';
 import UserList from '../views/UserList.vue';
+import UserDetail from '../views/UserDetail.vue';
 
 Vue.use(VueRouter);
 
@@ -25,19 +26,14 @@ const routes = [
         component: CodeList,
       },
       {
-        path: '/user',
-        name: '사용자 관리',
-        component: UserList,
-      },
-      {
-        path: '/student',
+        path: '/user/:role',
         name: '수강생 관리',
         component: UserList,
       },
       {
-        path: '/teacher',
-        name: '강사 관리',
-        component: UserList,
+        path: '/user_detail/:role/:userId',
+        name: '수강생 상세',
+        component: UserDetail,
       },
     ],
   },
@@ -49,7 +45,7 @@ const routes = [
 ];
 
 const router = new VueRouter({
-  mode: 'history',
+  // mode: 'history',
   routes,
 });
 

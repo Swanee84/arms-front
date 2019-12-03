@@ -1,10 +1,18 @@
 import api from './axios';
 
-let detailCodeName = {}; // 어떻게 사용될지 몰라서 export 함. object 에 직접 접근이 필요 없으면 export 제거하자.
+let detailCodeName = null; // 어떻게 사용될지 몰라서 export 함. object 에 직접 접근이 필요 없으면 export 제거하자.
 let detailCodeObject = null;
-let groupCodeName = {};
-let groupCodeObject = {};
+let groupCodeObject = null;
+let userInfo = null;
 const constAcademyId = 1;
+
+function getUserInfo() {
+  return userInfo;
+}
+
+function setUserInfo(info) {
+  userInfo = info;
+}
 
 function isEmpty(obj) {
   return Object.keys(obj).length === 0;
@@ -18,8 +26,10 @@ function setPagePerListCount(listCnt) {
   localStorage.listCnt = listCnt;
 }
 
+// <--- Detail Code 불러오기 --->
+
 async function getDetailCodeName(key) {
-  if (isEmpty(detailCodeName)) {
+  if (!detailCodeName) {
     await selAllDetailCodeList();
   }
   if (key) {
@@ -28,11 +38,11 @@ async function getDetailCodeName(key) {
   return detailCodeName;
 }
 
-async function getDetailCodeObject(key) {
-  if (!detailCodeObject) {
-    await selAllDetailCodeList();
+function getDetailCodeObject(key) {
+  if (key) {
+    return detailCodeObject[key];
   }
-  return detailCodeObject[key];
+  return detailCodeObject;
 }
 
 async function selAllDetailCodeList() {
@@ -49,83 +59,29 @@ async function selAllDetailCodeList() {
   return detailCodeName;
 }
 
-////////////////////
-async function getCodeGroup(key) {
-  const codeGroup = await getGroupCodeObject(key);
-  return codeGroup;
-}
-
-async function getGroupCodeObject(key) {
-  let groupCode = groupCodeObject[key];
-  if (!groupCode) {
-    const response = await api.post('/code/selGroupCodeInDetailCodeList', {
-      academyId: constAcademyId,
-      grpCdList: [key],
-    });
-    if (response.data && response.data.result && response.data.model.length > 0) {
-      groupCodeObject[key] = response.data.model[0];
-      groupCode = response.data.model[0];
-    }
-  }
-  return groupCode;
-}
-
-async function getCodeGroupList(keyList) {
-  const codeGroupList = await getGroupCodeObjects(keyList);
-  return codeGroupList;
-}
-
-async function getGroupCodeObjects(keyList) {
-  const returnGrpObject = {};
-  const grpCdList = [];
-  for (const key of keyList) {
-    const groupCode = groupCodeObject[key];
-    if (!groupCode) {
-      grpCdList.push(key);
-    } else {
-      returnGrpObject[key] = groupCode;
-    }
-  }
-
-  if (grpCdList.length > 0) {
-    const response = await api.post('/code/selGroupCodeInDetailCodeList', {
-      academyId: constAcademyId,
-      grpCdList,
-    });
-    const groupCodeList = response.data.model || [];
-    for (const groupCode of groupCodeList) {
-      groupCodeObject[groupCode.grpCd] = groupCode;
-      returnGrpObject[groupCode.grpCd] = groupCode;
-    }
-  }
-  return returnGrpObject;
-}
-
-async function getAllGroupCodeObjects() {
+// <--- Group Code 불러오기 --->
+async function getAllGroupCodeObjects(key) {
+  console.log('getAllGroupCodeObjects >>> ', key);
   const response = await api.post('/code/selGroupCodeInDetailCodeList', {
     academyId: constAcademyId,
   });
+  groupCodeObject = {};
   const groupCodeList = response.data.model;
   for (const groupCode of groupCodeList) {
     groupCodeObject[groupCode.grpCd] = groupCode;
   }
-  return groupCodeObject;
 }
 
-async function getGroupDetailList(key, val1, val2, val3, val5, val6) {
-  let groupCode = groupCodeObject[key];
-  if (!groupCode) {
-    groupCode = await getGroupCodeObject(key);
-    if (!groupCode) {
-      return [];
-    }
+async function getGroupDetailList(key, val1, val2, val3) {
+  if (!groupCodeObject) {
+    await getAllGroupCodeObjects(key);
   }
-
-  let cdDtlList = groupCode.cdDtlList;
+  const groupCode = groupCodeObject[key];
+  const cdDtlList = groupCode.cdDtlList;
   let returnList = [];
-  if (val1 || val2 || val3 || val5 || val6) {
+  if (val1 || val2 || val3) {
     for (const code of cdDtlList) {
-      if ((!val1 || val1 == code.val1) && (!val2 || val2 == code.val2) && (!val3 || val3 == code.val3) && (!val5 || val5 == code.val5) && (!val6 || val6 == code.val6)) {
+      if ((!val1 || val1 == code.val1) && (!val2 || val2 == code.val2) && (!val3 || val3 == code.val3)) {
         returnList.push(code);
       }
     }
@@ -136,56 +92,27 @@ async function getGroupDetailList(key, val1, val2, val3, val5, val6) {
 }
 
 ////////////////////
-async function getGroupCodeName(key) {
-  if (isEmpty(groupCodeName)) {
-    await selAllGroupCodeList();
-  }
-  return groupCodeName[key];
-}
+// async function getGroupCodeName(key) {
+//   if (isEmpty(groupCodeName)) {
+//     await selAllGroupCodeList();
+//   }
+//   return groupCodeName[key];
+// }
 
-async function selAllGroupCodeList() {
-  const response = await this.$http.post('/code/selGroupCodeList');
-  const groupCodeList = response.data;
-  for (let code of groupCodeList) {
-    groupCodeName[code.grpCd] = code.grpCdName;
-    groupCodeObject[code.grpCd] = code;
-  }
-}
+// async function selAllGroupCodeList() {
+//   const response = await this.$http.post('/code/selGroupCodeList');
+//   const groupCodeList = response.data;
+//   for (let code of groupCodeList) {
+//     groupCodeName[code.grpCd] = code.grpCdName;
+//     groupCodeObject[code.grpCd] = code;
+//   }
+// }
 
 function convertPhoneString(number) {
   if (!number) {
     return '';
   }
   return number.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-}
-
-function getLanguageImageName(code) {
-  if (code == 'LANG001') {
-    return 'images/english.png';
-  }
-  if (code == 'LANG002') {
-    return 'images/chinese.png';
-  }
-  if (code == 'LANG003') {
-    return 'images/japanese.png';
-  }
-  return '';
-}
-
-function getChannelImageName(code) {
-  if (code == 'CHN001') {
-    return 'images/call.png';
-  }
-  if (code == 'CHN002') {
-    return 'images/mail.png';
-  }
-  if (code == 'CHN003') {
-    return 'images/homepage.png';
-  }
-  if (code == 'CHN004') {
-    return 'images/place.png';
-  }
-  return '';
 }
 
 function addComma(num) {
@@ -245,15 +172,6 @@ function abbreviateString(value, limit = 30) {
   }
 }
 
-function abbreviateString2(value, limit = 8) {
-  // ES6 의 Default parameters https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Functions/Default_parameters
-  if (value.length > limit) {
-    return value.substr(0, limit) + '...';
-  } else {
-    return value;
-  }
-}
-
 function saveFile(fileName, response) {
   const blobData = response.data;
   let url = URL.createObjectURL(blobData);
@@ -280,32 +198,28 @@ function saveFile(fileName, response) {
 // }
 
 export default {
+  getUserInfo,
+  setUserInfo,
+
   getDetailCodeName,
   getDetailCodeObject,
-
-  getCodeGroup,
-  getCodeGroupList,
+  selAllDetailCodeList,
 
   getAllGroupCodeObjects,
-  getGroupCodeName,
-  selAllDetailCodeList,
   getGroupDetailList,
 
-  detailCodeName,
   convertPhoneString,
   isEmpty,
-  getLanguageImageName,
   addComma,
   lpad,
   calcDivRound,
 
   getYearMonthArray,
+
   getPagePerListCount,
   setPagePerListCount,
 
   abbreviateString,
-  abbreviateString2,
-  getChannelImageName,
 
   saveFile,
   constAcademyId,

@@ -6,8 +6,9 @@ const numGtEqZeroRule = v => ((v || v === 0) && v >= 0) || '0 이상의 값을 �
 const numLt100Rule = v => (v && v < 100) || '100 미만의 값을 입력하세요.';
 const emailRule = v => /.+@.+\..+/.test(v) || '이메일 형식에 맞지 않습니다.';
 const charGt4Rule = v => (v && v.length >= 4) || '4자리 이상 입력하세요.';
-const datePickerRule = v => (v && /^(19|20)\d{2}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[0-1])$/.test(v)) || '날짜 형식에 맞게 입력해주세요.(2019-04-09)';
+const datePickerRule = v => (v && /^(19|20)\d{2}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[0-1])$/.test(v)) || !v || '날짜 형식에 맞게 입력해주세요.(2019-04-09)';
 const timePickerRule = v => (v && /(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/.test(v)) || '시간 형식에 맞게 입력해주세요.(15:59)';
+const phoneNumRule = v => /^\d{3}-\d{3,4}-\d{4}$/.test(v) || '폰번호 형식에 맞지 않습닏다.';
 
 export default {
   requireRules: [requierRule],
@@ -20,9 +21,11 @@ export default {
 
   emailRules: [requierRule, emailRule],
 
+  phoneRules: [requierRule, phoneNumRule],
+
   passWordRules: [requierRule, charGt4Rule],
 
-  resvEmailRules: [emailRule],
+  optionalEmailRules: [emailRule],
 
   dateRules: [datePickerRule],
 

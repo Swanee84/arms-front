@@ -48,7 +48,6 @@
 </template>
 
 <script>
-
 export default {
   data() {
     return {
@@ -59,6 +58,12 @@ export default {
   },
   components: {},
   props: {},
+
+  async beforeCreated() {
+    await this.$common.getDetailCodeName();
+    await this.$common.getAllGroupCodeObjects();
+  },
+
   async created() {
     await this.tokenRefresh();
   },
@@ -76,7 +81,7 @@ export default {
         localStorage.token = token;
         this.$http.defaults.headers['Authorization'] = token;
         this.items = response.data.jsonData;
-        sessionStorage.role = response.data.model.role;
+        this.$common.setUserInfo(response.data.model);
 
         // let initUrl = response.data.returnDto.initUrl;
         // if (!initUrl) {

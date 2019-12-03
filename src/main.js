@@ -12,8 +12,8 @@ import rules from './plugins/rules';
 Vue.config.productionTip = false;
 
 Vue.prototype.$http = axiosInstance;
-Vue.prototype.$mycommon = common;
-Vue.prototype.$myrules = rules;
+Vue.prototype.$common = common;
+Vue.prototype.$rules = rules;
 
 Vue.use(moment);
 

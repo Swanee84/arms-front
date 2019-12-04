@@ -6,6 +6,7 @@ import Dashboard from '../views/Dashboard.vue';
 import CodeList from '../views/CodeList.vue';
 import UserList from '../views/UserList.vue';
 import UserDetail from '../views/UserDetail.vue';
+import CourseList from '../views/CourseList.vue';
 
 Vue.use(VueRouter);
 
@@ -26,6 +27,10 @@ const routes = [
         component: CodeList,
       },
       {
+        path: '/user',
+        redirect: '/user/student',
+      },
+      {
         path: '/user/:role',
         name: '수강생 관리',
         component: UserList,
@@ -34,6 +39,16 @@ const routes = [
         path: '/user_detail/:role/:userId',
         name: '수강생 상세',
         component: UserDetail,
+      },
+      {
+        path: '/course',
+        name: '수강 관리',
+        component: CourseList,
+      },
+      {
+        path: '/course/:branchId',
+        name: '지점 수강 관리',
+        component: CourseList,
       },
     ],
   },

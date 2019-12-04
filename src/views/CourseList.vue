@@ -4,7 +4,7 @@
       <v-col>
         <v-card class="mb-3">
           <v-toolbar flat dense>
-            <v-toolbar-title>{{ detailCodeName[search.role] }} 목록 {{ detailCodeName['ACDM_003'] }}</v-toolbar-title>
+            <v-toolbar-title>{{ detailCodeName[search.role] }} 수강 목록</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn outlined @click="newUserDialog()" class="mx-4"> <v-icon>note_add</v-icon>{{ detailCodeName[search.role] }} 추가</v-btn>
             <v-btn outlined :loading="loader" @click="getTablesData()"> <v-icon>search</v-icon>조회하기</v-btn>
@@ -37,10 +37,10 @@
                 <td class="text-center">{{ $common.convertPhoneString(item.user.phoneNo) }}</td>
                 <td class="text-center">{{ item.user.birthday }}</td>
                 <td class="text-center">
-                  <v-chip small :color="detailCodeObject[item.user.role].val1">{{ detailCodeName[item.user.role] }}</v-chip>
+                  <v-chip small :color="$common.getDetailCodeObject(item.user.role).val1">{{ detailCodeName[item.user.role] }}</v-chip>
                 </td>
                 <td class="text-center">
-                  <v-chip small :color="detailCodeObject[item.user.status].val1">{{ detailCodeName[item.user.status] }}</v-chip>
+                  <v-chip small :color="$common.getDetailCodeObject(item.user.status).val1">{{ detailCodeName[item.user.status] }}</v-chip>
                 </td>
                 <td class="text-center">{{ $moment(item.user.regDt).format('YYYY-MM-DD HH:mm') }}</td>
               </tr>
@@ -161,6 +161,7 @@ export default {
       snackbarItem: false,
       snackbarText: '',
 
+      // userRole: '',
       isBranchSelectReadonly: false,
     };
   },
@@ -174,10 +175,10 @@ export default {
   beforeMount() {
     console.log(`beforeMount this.page : [${this.page}], this.$route`, this.$route);
     // this.setSearchRoleFromPath();
-    this.search.role = this.$route.params.role.toUpperCase();
+    // this.search.role = this.$route.params.role.toUpperCase();
     // this.itemsPerPage = this.$common.getPagePerListCount();
 
-    this.getTablesData();
+    // this.getInitData();
     // var queryObj = {}
     // queryObj.pagenumber = parseInt(this.$route.query.pagenumber) || 1
     // this.$router.push({ path: 'driver', query: queryObj })
@@ -186,6 +187,7 @@ export default {
   mounted() {
     console.log(`mounted this.$route`, this.$route);
     // this.itemsPerPage = parseInt(localStorage.itemsPerPage) || 10
+    // this.getUserInfo();
   },
 
   beforeUpdate() {
@@ -206,6 +208,10 @@ export default {
   },
 
   methods: {
+    async getInitData() {
+      this.getTablesData();
+    },
+
     async getTablesData() {
       console.log('=== GET USER LIST DATA ===');
       this.loader = true;
@@ -297,44 +303,17 @@ export default {
         this.$router.push({ path: 'driver', query: queryObj });
       }
     },
-
-    removeDashPhoneNo(num) {
-      return num.replace(/[^0-9]/g, '');
-    },
-
-    phoneNoInput() {
-      const phoneNo = this.editedItem.phoneNo;
-      if (/^\d{3}-\d{3,4}-\d{4}$/.test(phoneNo)) {
-        this.editedItem.password = phoneNo.split('-')[2];
-      }
-    },
-
-    setSearchRoleFromPath() {
-      // if (this.$route.path === '/student') {
-      this.search.role = this.$route.params.role.toUpperCase();
-      // } else if (this.$route.path === '/teacher') {
-      //   this.search.role = 'TEACHER';
-      // } else if (this.$route.path === '/director') {
-      //   this.search.role = 'DIRECTOR';
-      // } else if (this.$route.path === '/president') {
-      //   this.search.role = 'PRESIDENT';
-      // }
-    },
   },
 
   computed: {
-    ...mapGetters(['userInfo', 'isSuperUser', 'userRole', 'detailCodeName', 'detailCodeObject']),
+    ...mapGetters(['academyId', 'branchId', 'userRole', 'detailCodeName', 'detailCodeObject']),
+
+    isSuperUser() {
+      return this.userRole === 'ADMIN' || this.userRole === 'ACADEMY';
+    },
   },
 
   watch: {
-    '$route.path'(to, from) {
-      // 수강생 관리와 강사 관리에 동일한 컴포넌트를 쓰다보니 이게 필요하다.
-      console.log(`$route.path - to: ${to} , from: ${from}`);
-      // this.setSearchRoleFromPath();
-      this.search.role = this.$route.params.role.toUpperCase();
-      this.getTablesData();
-    },
-
     '$route.query.pagenumber'(to, from) {
       // 경로 변경에 반응하여...
       console.log(`[pagenumber] to : ${to}, from : ${from}`);

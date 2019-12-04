@@ -2,7 +2,7 @@
   <div>
     <v-navigation-drawer v-model="drawer" app>
       <v-list dense>
-        <template v-for="item in items">
+        <template v-for="item in menuItems">
           <v-row v-if="item.heading" :key="item.heading" align="center">
             <v-col cols="6">
               <v-subheader v-if="item.heading">{{ item.heading }}</v-subheader>
@@ -32,9 +32,9 @@
     </v-navigation-drawer>
     <v-app-bar app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>INTL' Taxi System</v-toolbar-title>
+      <v-toolbar-title>Palette &amp; U</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn small color="error" ripple @click.native="logoutAction"><v-icon>exit_to_app</v-icon>logout</v-btn>
+      <v-btn small color="error" ripple @click.native="signOutUser"><v-icon>exit_to_app</v-icon>logout</v-btn>
     </v-app-bar>
     <v-content>
       <v-container fluid class="fill-height">
@@ -48,24 +48,20 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
   data() {
     return {
       drawer: null,
       loading: true,
-      items: [],
     };
   },
   components: {},
   props: {},
 
-  async beforeCreated() {
-    await this.$common.getDetailCodeName();
-    await this.$common.getAllGroupCodeObjects();
-  },
-
-  async created() {
-    await this.tokenRefresh();
+  created() {
+    this.tokenRefresh();
   },
 
   mounted() {
@@ -73,33 +69,17 @@ export default {
   },
 
   methods: {
-    async tokenRefresh() {
-      if (localStorage.token) {
-        this.$http.defaults.headers['Authorization'] = localStorage.token;
-        const response = await this.$http.get('auth/tokenRefresh');
-        const token = response.data.code;
-        localStorage.token = token;
-        this.$http.defaults.headers['Authorization'] = token;
-        this.items = response.data.jsonData;
-        this.$common.setUserInfo(response.data.model);
-
-        // let initUrl = response.data.returnDto.initUrl;
-        // if (!initUrl) {
-        //   initUrl = '/dashboard';
-        // }
-        // localStorage.initUrl = initUrl;
-        // if (this.$route.fullPath == '/') {
-        //   this.$router.replace(initUrl);
-        // }
-      } else {
-        this.$router.replace('/signin');
-      }
+    tokenRefresh() {
+      this.$store.dispatch('tokenRefresh');
     },
 
-    logoutAction() {
-      delete localStorage.token;
-      this.$router.replace('/signin');
+    signOutUser() {
+      this.$store.dispatch('signOutUser');
     },
+  },
+
+  computed: {
+    ...mapGetters(['menuItems']),
   },
 
   watch: {},

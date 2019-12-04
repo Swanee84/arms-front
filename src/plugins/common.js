@@ -81,7 +81,7 @@ async function getGroupDetailList(key, val1, val2, val3) {
   let returnList = [];
   if (val1 || val2 || val3) {
     for (const code of cdDtlList) {
-      if ((!val1 || val1 == code.val1) && (!val2 || val2 == code.val2) && (!val3 || val3 == code.val3)) {
+      if ((!val1 || code.val1.indexOf(val1) > -1) && (!val2 || code.val2.indexOf(val2) > -1) && (!val3 || code.val3.indexOf(val3) > -1)) {
         returnList.push(code);
       }
     }

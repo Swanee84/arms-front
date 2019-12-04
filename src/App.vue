@@ -13,6 +13,10 @@ export default {
     };
   },
 
+  beforeCreate() {
+    this.$store.dispatch('selAllCodeInfo');
+  },
+
   methods: {},
 
   computed: {},

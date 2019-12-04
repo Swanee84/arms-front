@@ -16,7 +16,7 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer />
-                <v-btn color="primary" @click="loginAction()">로그인</v-btn>
+                <v-btn color="primary" @click="signInUser()">로그인</v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
@@ -39,24 +39,11 @@ export default {
   },
 
   methods: {
-    async loginAction() {
+    async signInUser() {
       if (!this.$refs.signInForm.validate()) {
         return;
       }
-      const response = await this.$http.post('/auth/signIn', {
-        email: this.email,
-        password: this.password,
-      });
-      console.log('response.data', response.data);
-      if (response.data.result) {
-        const token = response.data.code;
-        localStorage.token = token;
-        this.$http.defaults.headers['Authorization'] = token;
-
-        this.$router.replace('/dashboard');
-      } else {
-        alert(response.data.message);
-      }
+      this.$store.dispatch('signInUser', { email: this.email, password: this.password });
     },
 
     nextField() {

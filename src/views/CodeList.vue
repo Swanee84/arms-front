@@ -6,7 +6,7 @@
           <v-toolbar color="teal" dark>
             <v-toolbar-title>그룹코드 목록 </v-toolbar-title>
             <v-divider vertical inset class="mx-4" />
-            <v-text-field v-model="searchGrpCd" flat hide-details prepend-inner-icon="search" color="white" label="그룹코드 또는 코드명 검색"></v-text-field>
+            <v-text-field v-model="searchGrpCd" flat hide-details prepend-inner-icon="search" color="white" label="그룹코드 또는 코드명 검색" />
             <v-spacer></v-spacer>
             <v-btn icon @click="newGroupCodeDialog()">
               <v-icon>playlist_add</v-icon>
@@ -46,9 +46,9 @@
               <v-icon>reorder</v-icon>
               <v-icon>swap_vert</v-icon>Reorder
             </v-btn>
-            <v-toolbar-title
-              ><span v-if="detailCodeList != null">[ {{ selectedGroup }} : {{ selectedGroupName }} ] </span>상세코드 목록</v-toolbar-title
-            >
+            <v-toolbar-title>
+              <span v-if="detailCodeList != null">[ {{ selectedGroup }} : {{ selectedGroupName }} ] </span>상세코드 목록
+            </v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn v-if="detailCodeList != null" icon @click="newDetailCodeDialog()">
               <v-icon>playlist_add</v-icon>
@@ -117,13 +117,13 @@
               <v-container grid-list-md>
                 <v-row>
                   <v-col :sm="editedIndex > -1 ? 9 : 12">
-                    <v-text-field v-model="editGroupCode.grpCd" :rules="$rules.requireRules" label="Input group code" :readonly="editedIndex > -1 && !modifyGrpCd"></v-text-field>
+                    <v-text-field v-model="editGroupCode.grpCd" :rules="$rules.requireRules" label="Input group code" :readonly="editedIndex > -1 && !modifyGrpCd" />
                   </v-col>
                   <v-col v-if="editedIndex > -1" sm="3">
-                    <v-checkbox v-model="modifyGrpCd" label="그룹코드 수정"></v-checkbox>
+                    <v-checkbox v-model="modifyGrpCd" label="그룹코드 수정" />
                   </v-col>
                   <v-col sm="12">
-                    <v-text-field v-model="editGroupCode.grpCdName" :rules="$rules.requireRules" label="Input group name"></v-text-field>
+                    <v-text-field v-model="editGroupCode.grpCdName" :rules="$rules.requireRules" label="Input group name" />
                   </v-col>
                   <v-col sm="12">
                     <v-radio-group v-model="editGroupCode.status" :rules="$rules.requireRules" color="orange" row>
@@ -153,22 +153,22 @@
               <v-container grid-list-md>
                 <v-row>
                   <v-col md="12">
-                    <v-text-field v-model="editDetailCode.grpCd" label="Group code" readonly></v-text-field>
+                    <v-text-field v-model="editDetailCode.grpCd" label="Group code" readonly />
                   </v-col>
                   <v-col md="12">
-                    <v-text-field v-model="editDetailCode.dtlCd" label="Input detail code" :rules="$rules.requireRules"></v-text-field>
+                    <v-text-field v-model="editDetailCode.dtlCd" label="Input detail code" :rules="$rules.requireRules" />
                   </v-col>
                   <v-col md="12">
-                    <v-text-field v-model="editDetailCode.dtlCdName" label="Input detail name" :rules="$rules.requireRules"></v-text-field>
+                    <v-text-field v-model="editDetailCode.dtlCdName" label="Input detail name" :rules="$rules.requireRules" />
                   </v-col>
                   <v-col md="4">
-                    <v-text-field v-model="editDetailCode.val1" label="Input VAL 1"></v-text-field>
+                    <v-text-field v-model="editDetailCode.val1" label="Input VAL 1" />
                   </v-col>
                   <v-col md="4">
-                    <v-text-field v-model="editDetailCode.val2" label="Input VAL 2"></v-text-field>
+                    <v-text-field v-model="editDetailCode.val2" label="Input VAL 2" />
                   </v-col>
                   <v-col md="4">
-                    <v-text-field v-model="editDetailCode.val3" label="Input VAL 3"></v-text-field>
+                    <v-text-field v-model="editDetailCode.val3" label="Input VAL 3" />
                   </v-col>
                   <v-col md="12">
                     <v-radio-group v-model="editDetailCode.status" :rules="$rules.requireRules" color="orange" row>
@@ -194,7 +194,7 @@
 </template>
 
 <script>
-// import rules from "../../plugins/rules"
+import { mapGetters } from 'vuex'
 
 export default {
   data: () => ({
@@ -204,7 +204,6 @@ export default {
     groupCodeList: null,
     detailCodeList: null,
     codeStatusList: null,
-    detailCodeName: {},
 
     showByGroupIndex: null,
 
@@ -248,30 +247,26 @@ export default {
   }),
 
   beforeCreate() {
-    this.detailCodeName = this.$common.detailCodeName;
     this.editGroupCode = Object.assign({}, this.defaultGroupCode);
   },
 
-  mounted() {
+  async mounted() {
     this.selGroupCodeList();
-    this.getStatusCodeList();
+    this.codeStatusList = await this.groupDetailList('CODE');
+    console.log('this.codeStatusList >>> ', this.codeStatusList)
   },
 
   updated() {},
 
   methods: {
-    async getStatusCodeList() {
-      this.detailCodeName = await this.$common.getDetailCodeName();
-      this.codeStatusList = await this.$common.getGroupDetailList('CODE');
-    },
     async selGroupCodeList() {
-      const response = await this.$http.post('/code/selGroupCodeList', { academyId: this.$common.constAcademyId });
+      const response = await this.$http.post('/code/selGroupCodeList', { academyId: this.academyId });
       this.groupCodeList = response.data.model;
     },
 
     async selDetailCodeList() {
       let grpId = this.selectedGroupItem.grpId;
-      const response = await this.$http.post('/code/selDetailCodeList', { academyId: this.$common.constAcademyId, grpId });
+      const response = await this.$http.post('/code/selDetailCodeList', { academyId: this.academyId, grpId });
       let detailCodeList = response.data.model;
       return detailCodeList;
     },
@@ -382,7 +377,7 @@ export default {
         item.dtlOrder = order;
         sendOrderingList.push({ grpId: item.grpId, dtlId: item.dtlId, dtlOrder: order });
       }
-      const response = await this.$http.post('/code/updCodeOrdering', { academyId: this.$common.constAcademyId, cdDtlList: sendOrderingList });
+      const response = await this.$http.post('/code/updCodeOrdering', { academyId: this.academyId, cdDtlList: sendOrderingList });
       this.selectedGroupItem.detailCodeList = this.detailCodeList;
       this.reorderClose();
     },
@@ -435,7 +430,7 @@ export default {
         }
       }
       let sendNewItem = this.editGroupCode;
-      sendNewItem.academyId = this.$common.constAcademyId;
+      sendNewItem.academyId = this.academyId;
 
       const response = await this.$http.post('/code/insGroupCode', { cdGrp: sendNewItem });
       if (response.data.result) {
@@ -481,7 +476,7 @@ export default {
         }
       }
       let sendNewItem = this.editDetailCode;
-      sendNewItem.academyId = this.$common.constAcademyId;
+      sendNewItem.academyId = this.academyId;
 
       const response = await this.$http.post('/code/insDetailCode', { cdDtl: sendNewItem });
       if (response.data.result) {
@@ -539,6 +534,8 @@ export default {
   },
 
   computed: {
+    ...mapGetters(['academyId', 'branchId', 'userRole', 'detailCodeName', 'detailCodeObject', 'groupDetailList']),
+
     filteredItems() {
       if (this.searchGrpCd) {
         let search = this.searchGrpCd.toUpperCase();

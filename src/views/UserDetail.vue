@@ -1,27 +1,25 @@
 <template>
   <v-container fluid grid-list-xl class="pa-0">
     <v-row dense>
-      <v-col cols="12">
-        <v-card class="mb-3">
-          <v-toolbar flat dense>
-            <v-toolbar-title v-if="userData">[{{ userData.name }}] 의 정보</v-toolbar-title>
+      <v-col cols="12" md="4">
+        <v-card v-if="userData" >
+          <v-card-title>
+            [{{ userData.name }}] 의 정보
             <v-spacer></v-spacer>
             <v-btn color="primary" v-if="!isEditMode" outlined @click.native="moveUserId(prevUserId)" :disabled="prevUserId === -1" class="mx-4"><v-icon>navigate_before</v-icon>PREV</v-btn>
             <v-btn color="primary" v-if="!isEditMode" outlined @click.native="moveUserId(nextUserId)" :disabled="nextUserId === -1">NEXT<v-icon>navigate_next</v-icon></v-btn>
-          </v-toolbar>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="5">
-        <v-card v-if="userData">
+          </v-card-title>
           <v-form ref="inputForm" lazy-validation>
             <v-card-text>
               <v-container>
                 <v-row dense>
-                  <v-col cols="12">
-                    <v-text-field label="사용자 유형" :value="detailCodeName[role]" readonly />
+                  <v-col cols="12" sm="6" md="6">
+                    <v-text-field v-if="!isChangeRole || !isEditMode" label="사용자 유형" :value="detailCodeName[role]" readonly />
+                    <v-select v-else-if="isChangeRole && isEditMode" v-model="userData.role" :items="roleCodeList" label="사용자 유형 선택" item-text="dtlCdName" item-value="dtlCd" />
                   </v-col>
-                  <!-- <v-col cols="12" sm="6" md="6">
-                  </v-col> -->
+                  <v-col cols="12" sm="6" md="6">
+                    <v-checkbox v-if="isEditMode" v-model="isChangeRole" label="사용자 유형 변경" @change="checkRoleChangeAlert" />
+                  </v-col>
                   <v-col cols="12" sm="6" md="6">
                     <v-text-field v-model="userData.email" label="Email" :rules="$rules.optionalEmailRules" :readonly="!isEditMode" />
                   </v-col>
@@ -61,18 +59,39 @@
           </v-card-actions>
         </v-card>
       </v-col>
+      <v-col cols="12" md="4">
+        <v-card v-if="courseList" >
+          <v-card-title>
+            사용자 수강 목록
+            <v-spacer></v-spacer>
+            <v-btn color="primary" outlined @click.native="regCourse()">수강등록</v-btn>
+          </v-card-title>
+          <v-card-text>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-card v-if="selectedCourse" >
+          <v-card-title>
+            사용자 수업 목록
+          </v-card-title>
+          <v-card-text>
+          </v-card-text>
+        </v-card>
+      </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { mask } from 'vue-the-mask';
 
 export default {
   data() {
     return {
       loader: true,
-      detailCodeName: {},
+      roleCodeList: [],
 
       userId: 0,
       nextUserId: 0,
@@ -80,7 +99,9 @@ export default {
       role: '',
 
       userData: null,
-      userRole: '',
+      courseList: null,
+      selectedCourse: null,
+      lessonRecordList: null,
 
       mask: {
         dateMask: '####-##-##',
@@ -89,6 +110,7 @@ export default {
       birthDatePicker: false,
 
       isEditMode: false,
+      isChangeRole: false,
     };
   },
 
@@ -103,13 +125,11 @@ export default {
     this.role = this.$route.params.role;
     this.userId = parseInt(this.$route.params.userId);
 
-    this.getInitData();
     // var queryObj = {}
     // queryObj.pagenumber = parseInt(this.$route.query.pagenumber) || 1
     // this.$router.push({ path: 'driver', query: queryObj })
   },
   mounted() {
-    this.getUserInfo();
     this.getUserDetailInfo();
   },
 
@@ -118,10 +138,6 @@ export default {
   },
 
   methods: {
-    async getInitData() {
-      this.detailCodeName = await this.$common.getDetailCodeName();
-    },
-
     async getUserDetailInfo() {
       console.log('=== GET USER DETAIL DATA ===');
       this.loader = true;
@@ -132,6 +148,13 @@ export default {
         const data = response.data.model;
         data.phoneNo = this.$common.convertPhoneString(data.phoneNo);
         this.userData = data;
+        if (this.userRole === 'STUDENT') {
+          this.courseList = data.courseList;
+          if (this.courseList.length > 0) {
+            this.selectedCourse = this.courseList[0];
+          }
+        }
+        this.lessonRecordList = data.lessonRecordList
         this.prevUserId = response.data.jsonData.prevUserId;
         this.nextUserId = response.data.jsonData.nextUserId;
       } else {
@@ -140,17 +163,6 @@ export default {
 
       console.log('========== END ==========');
       this.loader = false;
-    },
-
-    getUserInfo() {
-      const userInfo = this.$common.getUserInfo();
-      if (!userInfo) {
-        setTimeout(() => {
-          this.getUserInfo();
-        }, 100);
-      } else {
-        this.userRole = userInfo.role;
-      }
     },
 
     userEditMode() {
@@ -182,7 +194,8 @@ export default {
       if (response.data.result) {
         alert('사용자 정보가 수정되었습니다.');
         this.isEditMode = false;
-        this.getUserDetailInfo();
+        this.userData.modDt = Date();
+        // this.getUserDetailInfo(); // 다시 불러올 필요가 있는가?
       } else {
         alert('사용자 정보수정이 실패하였습니다.\n관리자에게 문의 바랍니다.');
       }
@@ -194,7 +207,7 @@ export default {
       if (/^\d{3}-\d{3,4}-\d{4}$/.test(phoneNo)) {
         password = phoneNo.split('-')[2];
       } else {
-        alert('비밀번호 초기화는 사용자의 폰번호 뒤 4자리로 입력됩니다.\n휴대폰 번호를 정확하게 입력하세요.')
+        alert('비밀번호 초기화는 사용자의 폰번호 뒤 4자리로 입력됩니다.\n휴대폰 번호를 정확하게 입력하세요.');
         return;
       }
       const confirmFlag = confirm(`${this.userData.name} 님의 비밀번호를 '${password}' 로 초기화 하시겠습니까?`);
@@ -211,25 +224,41 @@ export default {
     },
 
     moveUserId(userId) {
-      // this.userId = userId;
-      // this.$router.push({ path: `/user_detail/${this.role}/${userId}` });
       this.$router.push({ name: '수강생 상세', params: { role: this.role, userId }});
+    },
 
-      // this.getUserDetailInfo();
+    async checkRoleChangeAlert(val) {
+      if (this.roleCodeList.length === 0) {
+        this.roleCodeList = this.groupDetailList('ROLE', null, this.userRole);
+      }
+      if (val) {
+        alert('사용자 유형 변경은 실수로 등록했을 때만 사용하길 권장합니다.');
+      }
     },
   },
 
   computed: {
+    ...mapGetters(['academyId', 'branchId', 'userRole', 'detailCodeName', 'detailCodeObject', 'groupDetailList']),
+
+    selectedCourseInLessonList() {
+      if (!this.selectedCourse) {
+        return [];
+      }
+      const courseId = this.selectedCourse.courseId;
+      let fitems = this.lessonRecordList.filter(item => {
+        return item.courseId === courseId;
+      });
+      return fitems;
+    }
   },
 
   watch: {
-    '$route.params.userId' (to, from) {
-      console.log(`this.$route.params.userId :: to-${to}, from-${from}`)
+    '$route.params.userId'(to, from) {
+      console.log(`this.$route.params.userId :: to-${to}, from-${from}`);
       this.userId = to;
       this.getUserDetailInfo();
     },
   },
-
 
 };
 </script>

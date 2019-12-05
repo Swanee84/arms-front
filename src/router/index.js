@@ -36,7 +36,7 @@ const routes = [
         component: UserList,
       },
       {
-        path: '/user_detail/:role/:userId',
+        path: '/user_detail/:role/:userIndex',
         name: '수강생 상세',
         component: UserDetail,
       },

@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex';
 
 export default {
   data() {
@@ -69,13 +69,7 @@ export default {
   },
 
   methods: {
-    tokenRefresh() {
-      this.$store.dispatch('tokenRefresh');
-    },
-
-    signOutUser() {
-      this.$store.dispatch('signOutUser');
-    },
+    ...mapActions(['tokenRefresh', 'signOutUser']),
   },
 
   computed: {

@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import { mapActions } from 'vuex';
 export default {
   name: 'App',
   data() {
@@ -13,11 +14,13 @@ export default {
     };
   },
 
-  beforeCreate() {
-    this.$store.dispatch('selAllCodeInfo');
+  created() {
+    this.selAllCodeInfo();
   },
 
-  methods: {},
+  methods: {
+    ...mapActions(['selAllCodeInfo']),
+  },
 
   computed: {},
 };

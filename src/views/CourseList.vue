@@ -36,12 +36,8 @@
                 <td>{{ item.user.name }}</td>
                 <td class="text-center">{{ $common.convertPhoneString(item.user.phoneNo) }}</td>
                 <td class="text-center">{{ item.user.birthday }}</td>
-                <td class="text-center">
-                  <v-chip small :color="$common.getDetailCodeObject(item.user.role).val1">{{ detailCodeName[item.user.role] }}</v-chip>
-                </td>
-                <td class="text-center">
-                  <v-chip small :color="$common.getDetailCodeObject(item.user.status).val1">{{ detailCodeName[item.user.status] }}</v-chip>
-                </td>
+                <td class="text-center"></td>
+                <td class="text-center"></td>
                 <td class="text-center">{{ $moment(item.user.regDt).format('YYYY-MM-DD HH:mm') }}</td>
               </tr>
             </template>
@@ -100,7 +96,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 import { mask } from 'vue-the-mask';
 
 const totalObj = { dtlCd: null, dtlCdName: '전체' };
@@ -232,7 +228,7 @@ export default {
 
     selectUserDetail(item) {
       // this.$router.push({ path: `/user_detail/${item.user.role}/${item.user.userId}` });
-      this.$router.push({ name: '수강생 상세', params: { role: item.user.role, userId: item.user.userId }});
+      this.$router.push({ name: '수강생 상세', params: { role: item.user.role, userId: item.user.userId } });
     },
 
     async newUserDialog() {
@@ -306,11 +302,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters(['academyId', 'branchId', 'userRole', 'detailCodeName', 'detailCodeObject']),
-
-    isSuperUser() {
-      return this.userRole === 'ADMIN' || this.userRole === 'ACADEMY';
-    },
+    ...mapGetters(['academyId', 'branchId', 'userRole', 'isSuperUser', 'detailCodeName', 'detailCodeObject', 'groupDetailList']),
   },
 
   watch: {

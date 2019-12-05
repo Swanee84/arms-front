@@ -2,6 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import router from '../router/index';
 import api from '../plugins/axios';
+import user from './user';
 
 Vue.use(Vuex);
 
@@ -73,7 +74,7 @@ const getters = {
 export default new Vuex.Store({
   state: {
     userInfo: null,
-    userRole: 'NONE',
+    userRole: null,
     menuItems: null,
 
     detailCodeName: {},
@@ -87,67 +88,27 @@ export default new Vuex.Store({
   getters,
 
   mutations: {
-    async selAllDetailCodeList(state) {
-      const response = await api.post('/code/selAllDetailCodeList', {
-        academyId: state.academyId,
-      });
-      let detailCodeList = response.data.model;
-      for (let code of detailCodeList) {
+    selAllDetailCodeList(state, list) {
+      for (let code of list) {
         state.detailCodeName[code.dtlCd] = code.dtlCdName;
         state.detailCodeObject[code.dtlCd] = code;
       }
-      console.log('[END] selAllDetailCodeList()');
+      // console.log('[END] selAllDetailCodeList()');
     },
 
-    async getAllGroupCodeObjects(state) {
-      console.log('[START] getAllGroupCodeObjects()');
-      const response = await api.post('/code/selGroupCodeInDetailCodeList', {
-        academyId: state.academyId,
-      });
-      const groupCodeList = response.data.model;
-      for (const groupCode of groupCodeList) {
+    getAllGroupCodeObjects(state, list) {
+      for (const groupCode of list) {
         state.groupCodeObject[groupCode.grpCd] = groupCode;
       }
-      console.log('[END] getAllGroupCodeObjects()');
+      // console.log('[END] getAllGroupCodeObjects()');
     },
 
-    async signInUser(state, payload){
-      const response = await api.post('/auth/signIn', {
-        email: payload.email,
-        password: payload.password,
-      });
-      console.log('response.data', response.data);
-      const data = response.data;
-      if (data.result) {
-        localStorage.token = data.code;
-        api.defaults.headers['Authorization'] = data.code;
-        state.userInfo = data.model;
-        state.userRole = data.model.role;
-        state.menuItems = data.jsonData;
-
-        router.replace('/dashboard');
-      } else {
-        alert(response.data.message);
-      }
-    },
-
-    async tokenRefresh(state) {
-      if (localStorage.token) {
-        api.defaults.headers['Authorization'] = localStorage.token;
-        const response = await api.get('auth/tokenRefresh');
-        const data = response.data;
-        if (data.result) {
-          localStorage.token = data.code;
-          api.defaults.headers['Authorization'] = data.code;
-          state.userInfo = data.model;
-          state.userRole = data.model.role;
-          state.menuItems = data.jsonData;
-        } else {
-          router.replace('/signin');
-        }
-      } else {
-        router.replace('/signin');
-      }
+    setUserInfo(state, data) {
+      localStorage.token = data.code;
+      api.defaults.headers['Authorization'] = data.code;
+      state.userInfo = data.model;
+      state.userRole = data.model.role;
+      state.menuItems = data.jsonData;
     },
 
     signOutUser(state) {
@@ -158,22 +119,65 @@ export default new Vuex.Store({
   },
 
   actions: {
-    signInUser(context, payload) {
-      context.commit('signInUser', payload);
+    async signInUser(context, payload) {
+      const response = await api.post('/auth/signIn', {
+        email: payload.email,
+        password: payload.password,
+      });
+      const data = response.data;
+      if (data.result) {
+        context.commit('setUserInfo', data);
+        router.replace('/dashboard');
+      } else {
+        alert(data.message);
+      }
     },
 
-    tokenRefresh(context) {
-      context.commit('tokenRefresh');
+    async tokenRefresh(context) {
+      if (localStorage.token && !context.state.userInfo) {
+        api.defaults.headers['Authorization'] = localStorage.token;
+        const response = await api.get('auth/tokenRefresh');
+        const data = response.data;
+        if (data.result) {
+          context.commit('setUserInfo', data);
+        } else {
+          alert(data.message);
+          router.replace('/signin');
+        }
+      } else if (!context.state.userInfo) {
+        router.replace('/signin');
+      }
     },
 
     signOutUser(context) {
       context.commit('signOutUser');
     },
 
-    selAllCodeInfo(context) {
-      context.commit('selAllDetailCodeList');
-      context.commit('getAllGroupCodeObjects');
+    async selAllCodeInfo(context) {
+      // console.log('[START] selAllDetailCodeList()');
+      api
+        .post('/code/selAllDetailCodeList', {
+          academyId: context.state.academyId,
+        })
+        .then(response => {
+          const detailCodeList = response.data.model;
+          context.commit('selAllDetailCodeList', detailCodeList);
+          // console.log(`context.commit('selAllDetailCodeList') 끝`);
+        });
+
+      // console.log('[START] selGroupCodeInDetailCodeList()');
+      api
+        .post('/code/selGroupCodeInDetailCodeList', {
+          academyId: context.state.academyId,
+        })
+        .then(response => {
+          const groupCodeList = response.data.model;
+          context.commit('getAllGroupCodeObjects', groupCodeList);
+          // console.log(`context.commit('getAllGroupCodeObjects') 끝`);
+        });
     },
   },
-  modules: {},
+  modules: {
+    user,
+  },
 });

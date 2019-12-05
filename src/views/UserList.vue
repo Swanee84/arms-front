@@ -4,7 +4,7 @@
       <v-col>
         <v-card class="mb-3">
           <v-toolbar flat dense>
-            <v-toolbar-title>{{ detailCodeName[search.role] }} 목록 {{ detailCodeName['ACDM_003'] }}</v-toolbar-title>
+            <v-toolbar-title>{{ detailCodeName[search.role] }} 목록</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn outlined @click="newUserDialog()" class="mx-4"> <v-icon>note_add</v-icon>{{ detailCodeName[search.role] }} 추가</v-btn>
             <v-btn outlined :loading="loader" @click="getTablesData()"> <v-icon>search</v-icon>조회하기</v-btn>
@@ -12,13 +12,13 @@
           <v-toolbar-items>
             <v-row dense class="pl-4 pr-4">
               <v-col md="4" cols="4">
-                <v-text-field dense prepend-icon="email" v-model="search.email" label="이메일로 검색" @keyup.native.enter="getTablesData" />
+                <v-text-field dense prepend-icon="email" v-model="filter.email" label="이메일로 검색" />
               </v-col>
               <v-col md="4" cols="4">
-                <v-text-field dense prepend-icon="person" v-model="search.name" label="이름으로 검색" @keyup.native.enter="getTablesData" />
+                <v-text-field dense prepend-icon="person" v-model="filter.name" label="이름으로 검색" />
               </v-col>
               <v-col md="4" cols="4">
-                <v-text-field dense prepend-icon="phone_iphone" v-model="search.phoneNo" label="핸드폰번호 검색" @keyup.native.enter="getTablesData" />
+                <v-text-field dense prepend-icon="phone_iphone" v-model="filter.phoneNo" label="핸드폰번호 검색" />
               </v-col>
             </v-row>
           </v-toolbar-items>
@@ -29,7 +29,7 @@
               <v-progress-linear color="green accent-1" :height="4" indeterminate></v-progress-linear>
             </template>
             <template v-slot:item="{ item, index }">
-              <tr @click="selectUserDetail(item)">
+              <tr @click="selectUserDetail(index)">
                 <td class="text-center">{{ index + 1 }}</td>
                 <td v-if="isSuperUser" class="text-center">{{ item.branch.name }}</td>
                 <td>{{ item.user.email }}</td>
@@ -100,11 +100,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex';
 import { mask } from 'vue-the-mask';
-
-const totalObj = { dtlCd: null, dtlCdName: '전체' };
-const selectObj = { dtlCd: null, dtlCdName: '선택' };
 
 export default {
   data() {
@@ -125,6 +122,8 @@ export default {
         academyId: 1,
         branchId: 1,
         role: null,
+      },
+      filter: {
         email: null,
         name: null,
         phoneNo: null,
@@ -156,7 +155,6 @@ export default {
         status: '',
       },
       originItem: {},
-      // detailCodeName: {},
 
       snackbarItem: false,
       snackbarText: '',
@@ -177,7 +175,7 @@ export default {
     this.search.role = this.$route.params.role.toUpperCase();
     // this.itemsPerPage = this.$common.getPagePerListCount();
 
-    this.getTablesData();
+    this.getUserList();
     // var queryObj = {}
     // queryObj.pagenumber = parseInt(this.$route.query.pagenumber) || 1
     // this.$router.push({ path: 'driver', query: queryObj })
@@ -206,17 +204,23 @@ export default {
   },
 
   methods: {
+    ...mapActions(['selUserList']),
+
+    getUserList() {
+      const list = this.userList(this.search.role);
+      if (list) {
+        this.items = list;
+      } else {
+        this.getTablesData();
+      }
+    },
+
     async getTablesData() {
       console.log('=== GET USER LIST DATA ===');
       this.loader = true;
 
-      let search = this.search;
-      const response = await this.$http.post('user/selUserList', search);
-      if (response.data.result) {
-        this.items = response.data.model;
-      } else {
-        alert('조회 오류 Param: ', search);
-      }
+      const search = this.search;
+      this.items = await this.selUserList(search);
 
       console.log('========== END ==========');
       const page = parseInt(this.$route.query.pagenumber) || 1;
@@ -224,9 +228,9 @@ export default {
       this.loader = false;
     },
 
-    selectUserDetail(item) {
+    selectUserDetail(index) {
       // this.$router.push({ path: `/user_detail/${item.user.role}/${item.user.userId}` });
-      this.$router.push({ name: '수강생 상세', params: { role: item.user.role, userId: item.user.userId }});
+      this.$router.push({ name: '수강생 상세', params: { role: this.search.role, userIndex: index } });
     },
 
     async newUserDialog() {
@@ -289,11 +293,7 @@ export default {
       } else if (this.page == 0 && currentPage == 1) {
         queryObj.pagenumber = currentPage;
       }
-      if (this.search.drvNm) {
-        queryObj.drvNm = this.search.drvNm;
-      }
-
-      if (queryObj.pagenumber || queryObj.drvNm) {
+      if (queryObj.pagenumber) {
         this.$router.push({ path: 'driver', query: queryObj });
       }
     },
@@ -308,31 +308,18 @@ export default {
         this.editedItem.password = phoneNo.split('-')[2];
       }
     },
-
-    setSearchRoleFromPath() {
-      // if (this.$route.path === '/student') {
-      this.search.role = this.$route.params.role.toUpperCase();
-      // } else if (this.$route.path === '/teacher') {
-      //   this.search.role = 'TEACHER';
-      // } else if (this.$route.path === '/director') {
-      //   this.search.role = 'DIRECTOR';
-      // } else if (this.$route.path === '/president') {
-      //   this.search.role = 'PRESIDENT';
-      // }
-    },
   },
 
   computed: {
-    ...mapGetters(['userInfo', 'isSuperUser', 'userRole', 'detailCodeName', 'detailCodeObject']),
+    ...mapGetters(['userInfo', 'isSuperUser', 'userRole', 'detailCodeName', 'detailCodeObject', 'userList']),
   },
 
   watch: {
     '$route.path'(to, from) {
       // 수강생 관리와 강사 관리에 동일한 컴포넌트를 쓰다보니 이게 필요하다.
       console.log(`$route.path - to: ${to} , from: ${from}`);
-      // this.setSearchRoleFromPath();
       this.search.role = this.$route.params.role.toUpperCase();
-      this.getTablesData();
+      this.getUserList();
     },
 
     '$route.query.pagenumber'(to, from) {

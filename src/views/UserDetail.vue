@@ -2,12 +2,12 @@
   <v-container fluid grid-list-xl class="pa-0">
     <v-row dense>
       <v-col cols="12" md="4">
-        <v-card v-if="userData" >
+        <v-card v-if="userData">
           <v-card-title>
             [{{ userData.name }}] 의 정보
             <v-spacer></v-spacer>
-            <v-btn color="primary" v-if="!isEditMode" outlined @click.native="moveUserId(prevUserId)" :disabled="prevUserId === -1" class="mx-4"><v-icon>navigate_before</v-icon>PREV</v-btn>
-            <v-btn color="primary" v-if="!isEditMode" outlined @click.native="moveUserId(nextUserId)" :disabled="nextUserId === -1">NEXT<v-icon>navigate_next</v-icon></v-btn>
+            <v-btn color="primary" v-if="!isEditMode" outlined @click.native="moveUserIndex(-1)" :disabled="userIndex === 0" class="mx-4"><v-icon>navigate_before</v-icon>PREV</v-btn>
+            <v-btn color="primary" v-if="!isEditMode" outlined @click.native="moveUserIndex(1)" :disabled="userIndex >= (userItems.length - 1)">NEXT<v-icon>navigate_next</v-icon></v-btn>
           </v-card-title>
           <v-form ref="inputForm" lazy-validation>
             <v-card-text>
@@ -64,10 +64,33 @@
           <v-card-title>
             사용자 수강 목록
             <v-spacer></v-spacer>
-            <v-btn color="primary" outlined @click.native="regCourse()">수강등록</v-btn>
+            <v-btn color="primary" outlined @click.native="showCourseDialog()">수강등록</v-btn>
           </v-card-title>
-          <v-card-text>
-          </v-card-text>
+          <v-list two-line class="overflow-y-auto">
+            <template v-for="(item, index) in courseList">
+              <v-list-item :key="`Course:${item.courseId}`" @click="selectCourse(item)" @mouseover="showByCourseIndex = index" @mouseleave="showByCourseIndex = null">
+                <v-list-item-avatar color="teal darken-3">
+                  <span>{{ index + 1 }}</span>
+                </v-list-item-avatar>
+                <v-list-item-action>
+                  <v-icon v-if="selectedCourseId === selectedCourse.courseId">check</v-icon>
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>[ {{ item.startDate }} ~ {{ item.endDate }} ]</v-list-item-title>
+                  <v-list-item-subtitle>
+                    수업 사용 / 가능 횟수: {{ item.grpCdName }}<br />
+                    사용 수업 횟수: {{ selectedCourse.lessonRecordList.length }}
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+                <v-list-item-action>
+                  <v-btn icon ripple v-if="showByCourseIndex === index" @click="editCourseDialog(item, index)">
+                    <v-icon color="grey lighten-1">edit</v-icon>
+                  </v-btn>
+                </v-list-item-action>
+              </v-list-item>
+              <v-divider v-if="index < courseList.length - 1" :key="'divider_' + item.courseId"></v-divider>
+            </template>
+          </v-list>
         </v-card>
       </v-col>
       <v-col cols="12" md="4">
@@ -75,16 +98,31 @@
           <v-card-title>
             사용자 수업 목록
           </v-card-title>
-          <v-card-text>
-          </v-card-text>
+          <v-list two-line class="overflow-y-auto">
+            <template v-for="(item, index) in selectedCourse.lessonRecordList">
+              <v-list-item :key="`LR_${item.lrId}`" @click="selectLessonRecord(item)" @mouseover="showByLrIndex = index" @mouseleave="showByLrIndex = null">
+                <v-list-item-avatar color="blue darken-3">
+                  <span>{{ index + 1 }}</span>
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title>[ {{ detailCodeName[item.lessonType] }} ]</v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ item.lesson.lessonDate }}: {{ item.lesson.lessonStartTime }} ~ {{ item.lesson.lessonEndTime }}
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider v-if="index < selectedCourse.lessonRecordList.length - 1" :key="'divider_' + item.lrId"></v-divider>
+            </template>
+          </v-list>
         </v-card>
       </v-col>
+      <v-snackbar v-model="snackbarItem" top color="error"> {{ snackbarText }} <v-btn color="" outlined @click="snackbarItem = false">닫기</v-btn> </v-snackbar>
     </v-row>
   </v-container>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import { mask } from 'vue-the-mask';
 
 export default {
@@ -92,16 +130,25 @@ export default {
     return {
       loader: true,
       roleCodeList: [],
+      userItems: [],
 
-      userId: 0,
-      nextUserId: 0,
-      prevUserId: 0,
+      userIndex: 0,
       role: '',
 
       userData: null,
       courseList: null,
-      selectedCourse: null,
       lessonRecordList: null,
+
+      showByCourseIndex: null,
+      selectedCourse: null,
+      selectedCourseId: 0,
+      courseDialog: false,
+      courseEditItem: {},
+      courseDefaultItem: {},
+
+      showByLrIndex: null,
+      selectedLessonRecord: null,
+      selectedLrId: 0,
 
       mask: {
         dateMask: '####-##-##',
@@ -111,6 +158,10 @@ export default {
 
       isEditMode: false,
       isChangeRole: false,
+
+      snackbarItem: false,
+      snackbarText: '',
+
     };
   },
 
@@ -123,14 +174,12 @@ export default {
   beforeMount() {
     console.log('beforeMount this.$route', this.$route);
     this.role = this.$route.params.role;
-    this.userId = parseInt(this.$route.params.userId);
-
-    // var queryObj = {}
-    // queryObj.pagenumber = parseInt(this.$route.query.pagenumber) || 1
-    // this.$router.push({ path: 'driver', query: queryObj })
+    this.userIndex = parseInt(this.$route.params.userIndex);
   },
-  mounted() {
-    this.getUserDetailInfo();
+
+  async mounted() {
+    await this.getUserList();
+    await this.getUserDetailInfo();
   },
 
   beforeUpdate() {
@@ -138,27 +187,48 @@ export default {
   },
 
   methods: {
+    ...mapActions(['selUserList']),
+
+    async getUserList() {
+      const list = this.userList(this.role);
+      if (list) {
+        this.userItems = list;
+      } else {
+        await this.getUserListData();
+      }
+    },
+
+    async getUserListData() {
+      console.log('=== GET USER LIST DATA ===');
+      this.loader = true;
+      const search = { academyId: this.academyId, branchId: this.branchId, role: this.role };
+      this.userItems = await this.selUserList(search);
+      console.log('========== END ==========');
+      this.loader = false;
+    },
+
     async getUserDetailInfo() {
       console.log('=== GET USER DETAIL DATA ===');
       this.loader = true;
-
-      const search = { role: this.role, userId: this.userId };
-      const response = await this.$http.post('user/selUserDetail', search);
-      if (response.data.result) {
-        const data = response.data.model;
-        data.phoneNo = this.$common.convertPhoneString(data.phoneNo);
-        this.userData = data;
-        if (this.userRole === 'STUDENT') {
-          this.courseList = data.courseList;
+      if (this.userIndex >= this.userItems.length) {
+        alert('index error');
+        return;
+      }
+      const userData = Object.assign({}, this.userItems[this.userIndex].user);
+      userData.phoneNo = this.$common.convertPhoneString(userData.phoneNo);
+      this.userData = userData;
+      if (userData.role === 'STUDENT') {
+        const search = { userId: userData.userId };
+        const response = await this.$http.post('course/selUserCourseList', search);
+        const data = response.data;
+        if (data.result) {
+          this.courseList = data.model;
           if (this.courseList.length > 0) {
             this.selectedCourse = this.courseList[0];
           }
+        } else {
+          alert('조회 오류 Param: ', search);
         }
-        this.lessonRecordList = data.lessonRecordList
-        this.prevUserId = response.data.jsonData.prevUserId;
-        this.nextUserId = response.data.jsonData.nextUserId;
-      } else {
-        alert('조회 오류 Param: ', search);
       }
 
       console.log('========== END ==========');
@@ -188,7 +258,7 @@ export default {
         alert('수정된 내용이 없습니다.');
         return
       }
-      updItem.userId = this.userId;
+      updItem.userId = userItem.userId;
 
       const response = await this.$http.post('user/updUser', { user: updItem });
       if (response.data.result) {
@@ -215,7 +285,7 @@ export default {
         return;
       }
 
-      const response = await this.$http.post('user/updUser', { user: { userId: this.userId, password }});
+      const response = await this.$http.post('user/updUser', { user: { userId: this.userData.userId, password }});
       if (response.data.result) {
         alert('비밀번호가 초기화되었습니다. 사용자에게 확인 바랍니다.');
       } else {
@@ -223,8 +293,9 @@ export default {
       }
     },
 
-    moveUserId(userId) {
-      this.$router.push({ name: '수강생 상세', params: { role: this.role, userId }});
+    moveUserIndex(value) {
+      const nextIndex = this.userIndex + value
+      this.$router.push({ name: '수강생 상세', params: { role: this.role, userIndex: nextIndex }});
     },
 
     async checkRoleChangeAlert(val) {
@@ -235,10 +306,57 @@ export default {
         alert('사용자 유형 변경은 실수로 등록했을 때만 사용하길 권장합니다.');
       }
     },
+
+    showCourseDialog() {
+      this.courseDialog = true;
+      this.courseEditItem = Object.assign({}, this.courseDefaultItem);
+      if (this.$refs.courseForm) {
+        this.$refs.courseForm.resetValidation();
+      }
+    },
+
+    closeCourseDialog() {
+      this.courseDialog = false;
+      this.courseEditItem = Object.assign({}, this.courseDefaultItem);
+    },
+
+    async insCourse() {
+      const user = this.userData;
+      let sendNewItem = JSON.parse(JSON.stringify(this.courseEditItem));
+
+      const data = await this.$http.post('/course/insCourse', { course: sendNewItem });
+      if (!data.data.result) {
+        alert(data.data.message); // 이런 알림의 경우는 alert 로 한다.
+        return;
+      } else {
+        this.showSnackbar(data.data.message);
+        this.closeCourseDialog();
+      }
+    },
+
+    selectCourse(course) {
+      this.selectedCourse = course;
+      this.selectedCourseId = course.courseId;
+    },
+
+    editCourseDialog(course, index) {
+      this.selectedCourse(course);
+    },
+
+    selectLessonRecord(lessonRecord) {
+      this.selectedLessonRecord = lessonRecord;
+      this.selectedLrId = lessonRecord.lrId;
+    },
+
+    showSnackbar(text) {
+      this.snackbarText = text;
+      this.snackbarItem = true;
+    },
+
   },
 
   computed: {
-    ...mapGetters(['academyId', 'branchId', 'userRole', 'detailCodeName', 'detailCodeObject', 'groupDetailList']),
+    ...mapGetters(['academyId', 'branchId', 'userRole', 'detailCodeName', 'detailCodeObject', 'groupDetailList', 'userList']),
 
     selectedCourseInLessonList() {
       if (!this.selectedCourse) {
@@ -253,9 +371,9 @@ export default {
   },
 
   watch: {
-    '$route.params.userId'(to, from) {
-      console.log(`this.$route.params.userId :: to-${to}, from-${from}`);
-      this.userId = to;
+    '$route.params.userIndex'(to, from) {
+      console.log(`this.$route.params.userIndex :: to-${to}, from-${from}`);
+      this.userIndex = to;
       this.getUserDetailInfo();
     },
   },

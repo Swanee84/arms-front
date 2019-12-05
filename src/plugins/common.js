@@ -1,19 +1,3 @@
-import api from './axios';
-
-let detailCodeName = null; // 어떻게 사용될지 몰라서 export 함. object 에 직접 접근이 필요 없으면 export 제거하자.
-let detailCodeObject = null;
-let groupCodeObject = null;
-let userInfo = null;
-const constAcademyId = 1;
-
-function getUserInfo() {
-  return userInfo;
-}
-
-function setUserInfo(info) {
-  userInfo = info;
-}
-
 function isEmpty(obj) {
   return Object.keys(obj).length === 0;
 }
@@ -25,88 +9,6 @@ function getPagePerListCount() {
 function setPagePerListCount(listCnt) {
   localStorage.listCnt = listCnt;
 }
-
-// <--- Detail Code 불러오기 --->
-
-async function getDetailCodeName(key) {
-  if (!detailCodeName) {
-    await selAllDetailCodeList();
-  }
-  if (key) {
-    return detailCodeName[key];
-  }
-  return detailCodeName;
-}
-
-function getDetailCodeObject(key) {
-  if (key) {
-    return detailCodeObject[key];
-  }
-  return detailCodeObject;
-}
-
-async function selAllDetailCodeList() {
-  const response = await api.post('/code/selAllDetailCodeList', {
-    academyId: constAcademyId,
-  });
-  let detailCodeList = response.data.model;
-  detailCodeName = {};
-  detailCodeObject = {};
-  for (let code of detailCodeList) {
-    detailCodeName[code.dtlCd] = code.dtlCdName;
-    detailCodeObject[code.dtlCd] = code;
-  }
-  return detailCodeName;
-}
-
-// <--- Group Code 불러오기 --->
-async function getAllGroupCodeObjects(key) {
-  console.log('getAllGroupCodeObjects >>> ', key);
-  const response = await api.post('/code/selGroupCodeInDetailCodeList', {
-    academyId: constAcademyId,
-  });
-  groupCodeObject = {};
-  const groupCodeList = response.data.model;
-  for (const groupCode of groupCodeList) {
-    groupCodeObject[groupCode.grpCd] = groupCode;
-  }
-}
-
-async function getGroupDetailList(key, val1, val2, val3) {
-  if (!groupCodeObject) {
-    await getAllGroupCodeObjects(key);
-  }
-  const groupCode = groupCodeObject[key];
-  const cdDtlList = groupCode.cdDtlList;
-  let returnList = [];
-  if (val1 || val2 || val3) {
-    for (const code of cdDtlList) {
-      if ((!val1 || code.val1.indexOf(val1) > -1) && (!val2 || code.val2.indexOf(val2) > -1) && (!val3 || code.val3.indexOf(val3) > -1)) {
-        returnList.push(code);
-      }
-    }
-  } else {
-    returnList = cdDtlList.slice();
-  }
-  return returnList;
-}
-
-////////////////////
-// async function getGroupCodeName(key) {
-//   if (isEmpty(groupCodeName)) {
-//     await selAllGroupCodeList();
-//   }
-//   return groupCodeName[key];
-// }
-
-// async function selAllGroupCodeList() {
-//   const response = await this.$http.post('/code/selGroupCodeList');
-//   const groupCodeList = response.data;
-//   for (let code of groupCodeList) {
-//     groupCodeName[code.grpCd] = code.grpCdName;
-//     groupCodeObject[code.grpCd] = code;
-//   }
-// }
 
 function convertPhoneString(number) {
   if (!number) {
@@ -198,16 +100,6 @@ function saveFile(fileName, response) {
 // }
 
 export default {
-  getUserInfo,
-  setUserInfo,
-
-  getDetailCodeName,
-  getDetailCodeObject,
-  selAllDetailCodeList,
-
-  getAllGroupCodeObjects,
-  getGroupDetailList,
-
   convertPhoneString,
   isEmpty,
   addComma,
@@ -222,5 +114,4 @@ export default {
   abbreviateString,
 
   saveFile,
-  constAcademyId,
 };

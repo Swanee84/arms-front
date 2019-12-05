@@ -3,15 +3,15 @@
     <v-content>
       <v-container class="fill-height" fluid>
         <v-row align="center" justify="center">
-          <v-col cols="12" sm="8" md="4">
-            <v-card class="elevation-12">
+          <v-col cols="12" xs="12" sm="10" md="5">
+            <v-card class="elevation-12" flat>
               <v-toolbar color="primary" dark flat>
                 <v-toolbar-title>Pallete &amp; U</v-toolbar-title>
               </v-toolbar>
               <v-card-text>
                 <v-form ref="signInForm" lazy-validation>
                   <v-text-field label="로그인 이메일" v-model="email" name="login" prepend-icon="person" type="text" @keyup.enter="nextField" />
-                  <v-text-field label="비밀번호" v-model="password" name="password" prepend-icon="lock" type="password" @keyup.enter="loginAction" />
+                  <v-text-field label="비밀번호" v-model="password" name="password" prepend-icon="lock" type="password" @keyup.enter="signInUser" />
                 </v-form>
               </v-card-text>
               <v-card-actions>

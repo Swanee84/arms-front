@@ -194,7 +194,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 
 export default {
   data: () => ({
@@ -253,7 +253,7 @@ export default {
   async mounted() {
     this.selGroupCodeList();
     this.codeStatusList = await this.groupDetailList('CODE');
-    console.log('this.codeStatusList >>> ', this.codeStatusList)
+    console.log('this.codeStatusList >>> ', this.codeStatusList);
   },
 
   updated() {},
